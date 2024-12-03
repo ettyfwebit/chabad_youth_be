@@ -116,3 +116,23 @@ class Notification(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+class ActivityCreate(BaseModel):
+    branch_id: int
+    name: str
+    description: Optional[str]
+    location: Optional[str]
+    start_time: datetime
+    end_time: datetime
+    points_awarded: int
+
+
+class ActivityEdit(BaseModel):
+    branch_id: Optional[int]
+    name: Optional[str]
+    description: Optional[str]
+    location: Optional[str]
+    start_time: Optional[datetime]
+    end_time: Optional[datetime]
+    points_awarded: Optional[int]
