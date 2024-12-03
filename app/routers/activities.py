@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from app import db_models, response_models, database
 
-router = APIRouter(prefix="/children", tags=["children"])
+router = APIRouter(prefix="/login_users", tags=["login_users"])
 
 def get_db():
     db = database.SessionLocal()
@@ -11,6 +11,6 @@ def get_db():
     finally:
         db.close()
 
-@router.get("/", response_model=list[response_models.Child])
-def get_children(db: Session = Depends(get_db)):
-    return db.query(db_models.Child).all()
+@router.get("/", response_model=list[response_models.LoginUser])
+def get_activities(db: Session = Depends(get_db)):
+    return db.query(db_models.Activity).all()
