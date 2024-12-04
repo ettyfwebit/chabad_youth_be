@@ -11,6 +11,7 @@ class Role(Base):
 
     role_id = Column(Integer, primary_key=True)
     role_name = Column(String(50), nullable=False, unique=True)
+    login_users = relationship("LoginUser", back_populates="role", cascade="all, delete-orphan")
 
 
 # Branch Model
@@ -21,7 +22,21 @@ class Branch(Base):
     branch_name = Column(String(100), nullable=False, unique=True)
     location = Column(String(255))
     created_at = Column(DateTime, default=func.now())
+    activities = relationship("Activity", back_populates="branch")
 
+# Notification Model
+class Notification(Base):
+    __tablename__ = "notifications"
+
+    notification_id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("login_users.login_user_id", ondelete="CASCADE"), nullable=False)
+    sent_by = Column(Integer, ForeignKey("login_users.login_user_id", ondelete="SET NULL"), nullable=False)
+    message = Column(Text, nullable=False)
+    is_read = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=func.now())
+
+    recipient = relationship("LoginUser", foreign_keys=[user_id], back_populates="notifications_received")
+    sender = relationship("LoginUser", foreign_keys=[sent_by], back_populates="notifications_sent")
 
 # Login User Model
 class LoginUser(Base):
@@ -34,7 +49,21 @@ class LoginUser(Base):
     role_id = Column(Integer, ForeignKey("roles.role_id", ondelete="RESTRICT"), nullable=False)
     created_at = Column(DateTime, default=func.now())
 
-    role = relationship("Role", back_populates="users")
+    role = relationship("Role", back_populates="login_users")
+    notifications_received = relationship(
+        "Notification",
+        foreign_keys=[Notification.user_id],
+        back_populates="recipient",
+        cascade="all, delete-orphan"
+    )
+
+    # קשר לשליחת הודעות (notifications_sent)
+    notifications_sent = relationship(
+        "Notification",
+        foreign_keys=[Notification.sent_by],
+        back_populates="sender",
+        cascade="all, delete-orphan"
+    )
 
 
 # Parent Model
@@ -44,6 +73,7 @@ class Parent(Base):
     parent_id = Column(Integer, primary_key=True)
     login_user_id = Column(Integer, ForeignKey("login_users.login_user_id", ondelete="CASCADE"), nullable=False, unique=True)
     additional_info = Column(Text)
+    children = relationship("Child", back_populates="parent", cascade="all, delete-orphan")
 
     login_user = relationship("LoginUser")
 
@@ -83,6 +113,8 @@ class Child(Base):
     total_points = Column(Integer, default=0)
 
     parent = relationship("Parent", back_populates="children")
+    attendance_records = relationship("Attendance", back_populates="child")
+
 
 
 # Activity Model
@@ -99,6 +131,8 @@ class Activity(Base):
     points_awarded = Column(Integer, default=0)
 
     branch = relationship("Branch", back_populates="activities")
+    attendance_records = relationship("Attendance", back_populates="activity")
+
 
 
 # Attendance Model
@@ -119,16 +153,4 @@ class Attendance(Base):
     activity = relationship("Activity", back_populates="attendance_records")
 
 
-# Notification Model
-class Notification(Base):
-    __tablename__ = "notifications"
 
-    notification_id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("login_users.login_user_id", ondelete="CASCADE"), nullable=False)
-    sent_by = Column(Integer, ForeignKey("login_users.login_user_id", ondelete="SET NULL"), nullable=False)
-    message = Column(Text, nullable=False)
-    is_read = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=func.now())
-
-    recipient = relationship("LoginUser", foreign_keys=[user_id], back_populates="notifications_received")
-    sender = relationship("LoginUser", foreign_keys=[sent_by], back_populates="notifications_sent")
