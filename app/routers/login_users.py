@@ -57,29 +57,26 @@ def login_user(request:request_models.LoginRequest , db: Session = Depends(get_d
 
 def hash_password(password: str) -> str:
     return pwd_context.hash(password)
-
-
 @router.post("/register", response_model=response_models.LoginUser)
 def register_user(
-    user_name: str, 
-    email: str, 
-    password: str, 
-    role_id: int, 
+    register_request: request_models.RegisterRequest,  # Use RegisterRequest as the input
     db: Session = Depends(get_db)
 ):
     """
     Register a new user.
     
     Args:
-        user_name: The user_name for the new user.
-        email: The email for the new user.
-        password: The plain-text password for the new user.
-        role_id: The ID of the role assigned to the user.
+        register_request: The registration data (user_name, email, password, role_id).
         db: Database session (injected).
 
     Returns:
         The newly created user details, excluding the password.
     """
+    user_name = register_request.user_name
+    email = register_request.email
+    password = register_request.password
+    role_id = register_request.role_id
+
     # Check if user_name or email already exists
     existing_user = db.query(db_models.LoginUser).filter(
         (db_models.LoginUser.user_name == user_name) | (db_models.LoginUser.email == email)

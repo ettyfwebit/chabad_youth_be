@@ -1,6 +1,6 @@
 # create activity model
 from typing import Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 from sqlalchemy import DateTime, Integer, String, Text
 
 
@@ -33,3 +33,12 @@ class ActivityEdit(BaseModel):
 class LoginRequest(BaseModel):
     user_name: str
     password: str
+
+class RegisterRequest(BaseModel):
+    user_name: str
+    email: EmailStr
+    password: str
+    role_id: int
+
+    class Config:
+        orm_mode = True
