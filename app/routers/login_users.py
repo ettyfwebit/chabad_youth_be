@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from passlib.context import CryptContext
-from app import db_models, response_models, database
+from app import db_models, request_models, response_models, database
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -19,7 +19,9 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
 @router.post("/login")
-def login_user(user_name: str, password: str, db: Session = Depends(get_db)):
+
+
+def login_user(request:request_models.LoginRequest , db: Session = Depends(get_db)):
     """
     Validate user credentials.
 
@@ -32,13 +34,17 @@ def login_user(user_name: str, password: str, db: Session = Depends(get_db)):
         A dictionary with success status and the user's role if validation is successful.
     """
     # Fetch the user by user_name
-    user = db.query(db_models.LoginUser).filter(db_models.LoginUser.user_name == user_name).first()
+    # יצירת hash עבור הסיסמה "1234"
+    hashed_pass = pwd_context.hash("1234")
+    print(hashed_pass)
+    user = db.query(db_models.LoginUser).filter(db_models.LoginUser.username == request.user_name).first()
     
     if not user:
         raise HTTPException(status_code=401, detail="Invalid user_name or password")
 
     # Validate the password
-    if not verify_password(password, user.password_hash):
+    print(f"Stored password hash: {user.password_hash}")
+    if not verify_password(request.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Invalid user_name or password")
     
     # Fetch the role name
