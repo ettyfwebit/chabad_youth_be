@@ -37,7 +37,7 @@ def login_user(request:request_models.LoginRequest , db: Session = Depends(get_d
     # יצירת hash עבור הסיסמה "1234"
     hashed_pass = pwd_context.hash("1234")
     print(hashed_pass)
-    user = db.query(db_models.LoginUser).filter(db_models.LoginUser.username == request.user_name).first()
+    user = db.query(db_models.LoginUser).filter(db_models.LoginUser.user_name == request.user_name).first()
     
     if not user:
         raise HTTPException(status_code=401, detail="Invalid user_name or password")

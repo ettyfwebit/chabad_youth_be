@@ -43,7 +43,7 @@ class LoginUser(Base):
     __tablename__ = "login_users"
 
     login_user_id = Column(Integer, primary_key=True)
-    username = Column(String(50), nullable=False, unique=True)
+    user_name = Column(String(50), nullable=False, unique=True)
     email = Column(String(100), nullable=False, unique=True)
     password_hash = Column(String(255), nullable=False)
     role_id = Column(Integer, ForeignKey("roles.role_id", ondelete="RESTRICT"), nullable=False)
