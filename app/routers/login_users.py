@@ -52,11 +52,12 @@ def login_user(request:request_models.LoginRequest , db: Session = Depends(get_d
     if not role:
         raise HTTPException(status_code=500, detail="Role not found for user")
     
-    return {"success": True, "role": role.role_name}
+    return {"success": True, "role": role.role_name, "user_id": user.login_user_id}
 
 
 def hash_password(password: str) -> str:
     return pwd_context.hash(password)
+
 @router.post("/register", response_model=response_models.LoginUser)
 def register_user(
     register_request: request_models.RegisterRequest,  # Use RegisterRequest as the input

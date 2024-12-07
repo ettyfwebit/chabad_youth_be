@@ -32,7 +32,7 @@ class Notification(Base):
     user_id = Column(Integer, ForeignKey("login_users.login_user_id", ondelete="CASCADE"), nullable=False)
     sent_by = Column(Integer, ForeignKey("login_users.login_user_id", ondelete="SET NULL"), nullable=False)
     message = Column(Text, nullable=False)
-    is_read = Column(Boolean, default=False)
+    is_resolved = Column(Boolean, default=False)
     created_at = Column(DateTime, default=func.now())
 
     recipient = relationship("LoginUser", foreign_keys=[user_id], back_populates="notifications_received")
@@ -43,6 +43,7 @@ class LoginUser(Base):
     __tablename__ = "login_users"
 
     login_user_id = Column(Integer, primary_key=True)
+    chat_id = Column(String(50), primary_key=True)
     user_name = Column(String(50), nullable=False, unique=True)
     email = Column(String(100), nullable=False, unique=True)
     password_hash = Column(String(255), nullable=False)
@@ -151,6 +152,3 @@ class Attendance(Base):
 
     child = relationship("Child", back_populates="attendance_records")
     activity = relationship("Activity", back_populates="attendance_records")
-
-
-

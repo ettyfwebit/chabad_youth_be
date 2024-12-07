@@ -1,5 +1,5 @@
 # create activity model
-from typing import Optional
+from typing import List, Optional
 from pydantic import BaseModel, EmailStr
 from sqlalchemy import DateTime, Integer, String, Text
 
@@ -33,6 +33,13 @@ class ActivityEdit(BaseModel):
 class LoginRequest(BaseModel):
     user_name: str
     password: str
+
+
+class messageRequest(BaseModel):
+    message: str
+    user_ids: List[int]  # List of user IDs to send the message to
+    sent_by: int  # ID of the user sending the message
+
 
 class RegisterRequest(BaseModel):
     user_name: str

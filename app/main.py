@@ -1,7 +1,7 @@
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import children, activities, login_users
+from app.routers import children, activities, login_users, notifications
 from app.database import Base, engine
 
 # Create tables
@@ -20,3 +20,4 @@ app.add_middleware(
 app.include_router(children.router)
 app.include_router(activities.router)
 app.include_router(login_users.router)
+app.include_router(notifications.router)
