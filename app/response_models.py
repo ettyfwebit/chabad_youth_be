@@ -29,6 +29,7 @@ class LoginUser(BaseModel):
     user_name: str
     email: EmailStr
     role_id: int
+    chat_id: str
     created_at: datetime
 
     class Config:
@@ -110,8 +111,9 @@ class Notification(BaseModel):
     notification_id: int
     user_id: int
     sent_by: Optional[int]
+    sent_by_name: str
     message: str
-    is_read: bool
+    is_resolved: bool
     created_at: datetime
 
     class Config:

@@ -33,10 +33,8 @@ def login_user(request:request_models.LoginRequest , db: Session = Depends(get_d
     Returns:
         A dictionary with success status and the user's role if validation is successful.
     """
-   
-
-    user = db.query(db_models.LoginUser).filter(db_models.LoginUser.username == request.user_name).first()
-    
+  
+    user = db.query(db_models.LoginUser).filter(db_models.LoginUser.user_name == request.user_name).first()    
     if not user:
         raise HTTPException(status_code=401, detail="Invalid user_name or password")
 
@@ -48,34 +46,32 @@ def login_user(request:request_models.LoginRequest , db: Session = Depends(get_d
     if not role:
         raise HTTPException(status_code=500, detail="Role not found for user")
     
-    return {"success": True, "role": role.role_name, "user_id":user.login_user_id}
+    return {"success": True, "role": role.role_name}
 
 
 def hash_password(password: str) -> str:
     return pwd_context.hash(password)
 
-
 @router.post("/register", response_model=response_models.LoginUser)
 def register_user(
-    user_name: str, 
-    email: str, 
-    password: str, 
-    role_id: int, 
+    register_request: request_models.RegisterRequest,  # Use RegisterRequest as the input
     db: Session = Depends(get_db)
 ):
     """
     Register a new user.
     
     Args:
-        user_name: The user_name for the new user.
-        email: The email for the new user.
-        password: The plain-text password for the new user.
-        role_id: The ID of the role assigned to the user.
+        register_request: The registration data (user_name, email, password, role_id).
         db: Database session (injected).
 
     Returns:
         The newly created user details, excluding the password.
     """
+    user_name = register_request.user_name
+    email = register_request.email
+    password = register_request.password
+    role_id = register_request.role_id
+
     # Check if user_name or email already exists
     existing_user = db.query(db_models.LoginUser).filter(
         (db_models.LoginUser.user_name == user_name) | (db_models.LoginUser.email == email)
