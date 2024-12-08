@@ -33,17 +33,13 @@ def login_user(request:request_models.LoginRequest , db: Session = Depends(get_d
     Returns:
         A dictionary with success status and the user's role if validation is successful.
     """
-    # Fetch the user by user_name
-    # יצירת hash עבור הסיסמה "1234"
-    hashed_pass = pwd_context.hash("1234")
-    print(hashed_pass)
+   
+
     user = db.query(db_models.LoginUser).filter(db_models.LoginUser.username == request.user_name).first()
     
     if not user:
         raise HTTPException(status_code=401, detail="Invalid user_name or password")
 
-    # Validate the password
-    print(f"Stored password hash: {user.password_hash}")
     if not verify_password(request.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Invalid user_name or password")
     
@@ -52,7 +48,7 @@ def login_user(request:request_models.LoginRequest , db: Session = Depends(get_d
     if not role:
         raise HTTPException(status_code=500, detail="Role not found for user")
     
-    return {"success": True, "role": role.role_name}
+    return {"success": True, "role": role.role_name, "user_id":user.login_user_id}
 
 
 def hash_password(password: str) -> str:

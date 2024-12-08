@@ -87,6 +87,7 @@ class BranchManager(Base):
     branch_id = Column(Integer, ForeignKey("branches.branch_id", ondelete="SET NULL"))
     additional_info = Column(Text)
 
+    children = relationship("Child", back_populates="branch_manager")
     login_user = relationship("LoginUser")
     branch = relationship("Branch")
 
@@ -108,12 +109,15 @@ class Child(Base):
 
     child_id = Column(Integer, primary_key=True)
     parent_id = Column(Integer, ForeignKey("parents.parent_id", ondelete="CASCADE"), nullable=False)
+    branch_manager_id = Column(Integer, ForeignKey("branch_managers.branch_manager_id"))
+
     name = Column(String(100), nullable=False)
     date_of_birth = Column(Date, nullable=False)
     total_points = Column(Integer, default=0)
 
     parent = relationship("Parent", back_populates="children")
     attendance_records = relationship("Attendance", back_populates="child")
+    branch_manager = relationship("BranchManager", back_populates="children")
 
 
 
