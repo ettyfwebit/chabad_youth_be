@@ -1,3 +1,4 @@
+import base64
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from app import db_models, response_models, database
@@ -23,5 +24,8 @@ def get_children(user_id: int,db: Session = Depends(get_db)):
 @router.get("/getChildrenByParent", response_model=list[response_models.Child])
 def get_children(user_id: int,db: Session = Depends(get_db)):
     parent=db.query(db_models.Parent).filter(db_models.Parent.login_user_id==user_id).first()
-    return db.query(db_models.Child).filter(db_models.Child.parent_id == parent.parent_id).all()
-    
+    children= db.query(db_models.Child).filter(db_models.Child.parent_id == parent.parent_id).all()
+    for child in children:
+        if child.image:
+         child.image = base64.b64encode(child.image).decode('utf-8')  # Convert
+    return children

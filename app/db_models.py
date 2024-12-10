@@ -1,5 +1,5 @@
 from sqlalchemy import (
-    Column, Integer, String, ForeignKey, Text, Date, DateTime, Boolean, CheckConstraint, func
+    Column, Integer, LargeBinary, String, ForeignKey, Text, Date, DateTime, Boolean, CheckConstraint,Sequence, func
 )
 from sqlalchemy.orm import relationship
 from app.database import Base
@@ -14,15 +14,6 @@ class Role(Base):
     login_users = relationship("LoginUser", back_populates="role", cascade="all, delete-orphan")
 
 
-# Branch Model
-class Branch(Base):
-    __tablename__ = "branches"
-
-    branch_id = Column(Integer, primary_key=True)
-    branch_name = Column(String(100), nullable=False, unique=True)
-    location = Column(String(255))
-    created_at = Column(DateTime, default=func.now())
-    activities = relationship("Activity", back_populates="branch")
 
 # Notification Model
 class Notification(Base):
@@ -32,6 +23,7 @@ class Notification(Base):
     user_id = Column(Integer, ForeignKey("login_users.login_user_id", ondelete="CASCADE"), nullable=False)
     sent_by = Column(Integer, ForeignKey("login_users.login_user_id", ondelete="SET NULL"), nullable=False)
     message = Column(Text, nullable=False)
+    is_read=Column(Boolean, default=False)
     is_resolved = Column(Boolean, default=False)
     created_at = Column(DateTime, default=func.now())
 
@@ -43,7 +35,6 @@ class LoginUser(Base):
     __tablename__ = "login_users"
 
     login_user_id = Column(Integer, primary_key=True)
-    chat_id = Column(String(50), primary_key=True)
     user_name = Column(String(50), nullable=False, unique=True)
     email = Column(String(100), nullable=False, unique=True)
     password_hash = Column(String(255), nullable=False)
@@ -104,22 +95,44 @@ class Secretary(Base):
     login_user = relationship("LoginUser")
 
 
+
 # Child Model
 class Child(Base):
     __tablename__ = "children"
 
-    child_id = Column(Integer, primary_key=True)
-    parent_id = Column(Integer, ForeignKey("parents.parent_id", ondelete="CASCADE"), nullable=False)
-    branch_manager_id = Column(Integer, ForeignKey("branch_managers.branch_manager_id"))
 
-    name = Column(String(100), nullable=False)
-    date_of_birth = Column(Date, nullable=False)
+    child_id = Column(Integer,unique=True,  primary_key=True)
+    parent_id = Column(Integer, ForeignKey('parents.parent_id'), nullable=True)
+    first_name = Column(String(100), nullable=True)
+    last_name = Column(String(100))
+    nickname = Column(String(100))
+    date_of_birth = Column(Date, nullable=True)
+    id_number = Column(String(20), unique=True)
+    phone = Column(String(15))
+    school_name = Column(String(100))
+    street = Column(String(100))
+    house_number = Column(String(10))
+    city = Column(String(50))
+    parent_email = Column(String(100))
+    mother_name = Column(String(100))
+    mother_phone = Column(String(15))
+    father_name = Column(String(100))
+    father_phone = Column(String(15))
+    health_issue = Column(Boolean, default=False)
+    approval_received = Column(Boolean, default=False)
+    branch_id = Column(Integer, ForeignKey('branches.branch_id'))
+    class_id = Column(Integer, ForeignKey('classes.class_id'))
+    shirt_id = Column(Integer, ForeignKey('shirt_sizes.shirt_id'))
     total_points = Column(Integer, default=0)
-
-    parent = relationship("Parent", back_populates="children")
+    branch_manager_id = Column(Integer, ForeignKey('branch_managers.branch_manager_id'))
+    image=Column(LargeBinary)
+        # Relationships
     attendance_records = relationship("Attendance", back_populates="child")
-    branch_manager = relationship("BranchManager", back_populates="children")
-
+    branch_manager = relationship('BranchManager', back_populates='children')
+    branch = relationship('Branch', back_populates='children')
+    class_ = relationship('Class', back_populates='children')
+    shirt = relationship('ShirtSize', back_populates='children')
+    parent = relationship('Parent', back_populates='children')
 
 
 # Activity Model
@@ -139,7 +152,6 @@ class Activity(Base):
     attendance_records = relationship("Attendance", back_populates="activity")
 
 
-
 # Attendance Model
 class Attendance(Base):
     __tablename__ = "attendance"
@@ -156,3 +168,34 @@ class Attendance(Base):
 
     child = relationship("Child", back_populates="attendance_records")
     activity = relationship("Activity", back_populates="attendance_records")
+
+# Branch Model
+class Branch(Base):
+    __tablename__ = "branches"
+
+    branch_id = Column(Integer, primary_key=True)
+    branch_name = Column(String(100), nullable=False, unique=True)
+    location = Column(String(255))
+    created_at = Column(DateTime, default=func.now())
+    activities = relationship("Activity", back_populates="branch")
+    children = relationship('Child', back_populates='branch')
+class Class(Base):
+    __tablename__ = 'classes'
+
+    class_id = Column(Integer, primary_key=True)
+    class_name = Column(String(100), unique=True, nullable=False)
+
+    # Relationships
+    children = relationship('Child', back_populates='class_')
+
+
+class ShirtSize(Base):
+    __tablename__ = 'shirt_sizes'
+
+    shirt_id = Column(Integer, primary_key=True)
+    shirt_size = Column(String(20), unique=True, nullable=False)
+
+    # Relationships
+    children = relationship('Child', back_populates='shirt')
+
+

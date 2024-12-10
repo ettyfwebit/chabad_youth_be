@@ -2,6 +2,8 @@ from pydantic import BaseModel, EmailStr
 from datetime import date, datetime
 from typing import Optional, List
 
+from sqlalchemy import LargeBinary
+
 
 # Role Model
 class Role(BaseModel):
@@ -71,12 +73,31 @@ class Secretary(BaseModel):
 class Child(BaseModel):
     child_id: int
     parent_id: int
-    branch_manager_id: Optional[int]
-    name: str
+    first_name: str
     date_of_birth: date
+    id_number: Optional[str] = None
+    school_name: Optional[str] = None
+    street: Optional[str] = None
+    house_number: Optional[str] = None
+    city: Optional[str] = None
+    parent_email: Optional[str] = None
+    mother_name: Optional[str] = None
+    mother_phone: Optional[str] = None
+    father_name: Optional[str] = None
+    father_phone: Optional[str] = None
+    branch_id: Optional[int] = None
+    class_id: Optional[int] = None
+    shirt_id: Optional[int] = None
     total_points: int
+    branch_manager_id: int
+    last_name: Optional[str] = None
+    nickname: Optional[str] = None
+    phone: Optional[str] = None
+    image: Optional[bytes]=None
+
     class Config:
         orm_mode = True
+
 
 
 # Activity Model
