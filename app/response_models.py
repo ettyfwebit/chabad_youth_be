@@ -87,9 +87,9 @@ class Child(BaseModel):
     father_phone: Optional[str] = None
     branch_id: Optional[int] = None
     class_id: Optional[int] = None
-    shirt_id: Optional[int] = None
+    shirt_size_id: Optional[int] = None
     total_points: int
-    branch_manager_id: int
+    branch_manager_id:Optional[int]=None
     last_name: Optional[str] = None
     nickname: Optional[str] = None
     phone: Optional[str] = None
@@ -159,3 +159,18 @@ class ActivityEdit(BaseModel):
     start_time: Optional[datetime]
     end_time: Optional[datetime]
     points_awarded: Optional[int]
+
+class Class(BaseModel):
+
+    class_id :Optional[int]
+    class_name: Optional[str]
+    class Config:
+        orm_mode = True
+
+
+class ShirtSize(BaseModel):
+
+    shirt_size_id:int
+    shirt_size :str
+    class Config:
+        orm_mode = True

@@ -122,7 +122,7 @@ class Child(Base):
     approval_received = Column(Boolean, default=False)
     branch_id = Column(Integer, ForeignKey('branches.branch_id'))
     class_id = Column(Integer, ForeignKey('classes.class_id'))
-    shirt_id = Column(Integer, ForeignKey('shirt_sizes.shirt_id'))
+    shirt_size_id = Column(Integer, ForeignKey('shirt_sizes.shirt_size_id'))
     total_points = Column(Integer, default=0)
     branch_manager_id = Column(Integer, ForeignKey('branch_managers.branch_manager_id'))
     image=Column(LargeBinary)
@@ -192,7 +192,7 @@ class Class(Base):
 class ShirtSize(Base):
     __tablename__ = 'shirt_sizes'
 
-    shirt_id = Column(Integer, primary_key=True)
+    shirt_size_id = Column(Integer, primary_key=True)
     shirt_size = Column(String(20), unique=True, nullable=False)
 
     # Relationships
