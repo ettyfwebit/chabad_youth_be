@@ -34,7 +34,6 @@ def login_user(request:request_models.LoginRequest , db: Session = Depends(get_d
     Returns:
         A dictionary with success status and the user's role if validation is successful.
     """   
-    upload_image_to_db(40, r"C:\Users\ריקי\Downloads\DSC03774.jpg", db)
 
     user = db.query(db_models.LoginUser).filter(db_models.LoginUser.user_name == request.user_name).first()    
     if not user:
@@ -104,21 +103,3 @@ def register_user(
 
 from sqlalchemy.exc import SQLAlchemyError
 
-def upload_image_to_db(child_id: int, image_path: str, db: Session):
- 
-    try:
-        with open(image_path, "rb") as file:
-            image_data = file.read()
-        print(f"Image updated for child with ID {child_id}")  # לוג של השינוי
-        # Update the children table
-        query = db.query(db_models.Child).filter(db_models.Child.child_id == child_id).first()
-        if query:
-            query.image = image_data  # Update the image column
-            db.commit()
-            print(f"Commit successful for child with ID {child_id}")  # לוג אחרי הcommit
-
-        else:
-            raise ValueError(f"Child with ID {child_id} not found")
-    except (SQLAlchemyError, IOError) as e:
-        db.rollback()  # Rollback the transaction in case of error
-        raise HTTPException(status_code=500, detail=str(e))
