@@ -104,6 +104,34 @@ def create_child(child_data: dict, db: Session = Depends(get_db)):
         if new_child.image:
           new_child.image = base64.b64encode(new_child.image).decode('utf-8')  # Convert
         return new_child
+@router.put("/updateChild", response_model=response_models.Child)
+def update_child(child_data: dict, db: Session = Depends(get_db)):
+    
+        # חיפוש הילד במאגר
+        child = db.query(db_models.Child).filter(db_models.Child.child_id == child_data.get("child_id")).first()
+
+        if not child:
+            raise HTTPException(status_code=404, detail="Child not found")
+        print("Received data:", child_data)
+        child_data.pop('image',None)
+        # עדכון שדות הילד
+        for field, value in child_data.items():
+            if hasattr(child, field) and value is not None:
+                print(value)
+                setattr(child, field, value)
+
+        # שמירת העדכונים
+        db.commit()
+        db.refresh(child)
+
+        if child.image:
+            child.image = base64.b64encode(child.image).decode("utf-8")  # המרה אם התמונה קיימת
+
+        return child
+    # except Exception as e:
+    #     db.rollback()
+    #     raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
+
 
     # except IntegrityError:
     #     db.rollback()
