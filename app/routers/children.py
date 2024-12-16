@@ -112,21 +112,20 @@ def update_child(child_data: dict, db: Session = Depends(get_db)):
 
         if not child:
             raise HTTPException(status_code=404, detail="Child not found")
-        print("Received data:", child_data)
+        binary_data = base64.b64decode(child_data.get("image"))
         child_data.pop('image',None)
+
         # עדכון שדות הילד
         for field, value in child_data.items():
-            if hasattr(child, field) and value is not None:
-                print(value)
+            if hasattr(child, field) and value is not None and field is not 'image':
                 setattr(child, field, value)
-
+        
+        child.image=binary_data
         # שמירת העדכונים
         db.commit()
         db.refresh(child)
-
         if child.image:
-            child.image = base64.b64encode(child.image).decode("utf-8")  # המרה אם התמונה קיימת
-
+          child.image = base64.b64encode(child.image).decode('utf-8')  # Convert
         return child
     # except Exception as e:
     #     db.rollback()
