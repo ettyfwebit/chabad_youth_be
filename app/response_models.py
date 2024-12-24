@@ -24,6 +24,17 @@ class Branch(BaseModel):
     class Config:
         orm_mode = True
 
+class BranchGroup(BaseModel):
+
+    group_id:int
+    group_name :str
+    branch_id :int
+    class Config:
+        orm_mode = True
+
+  
+
+
 
 # Login User Model
 class LoginUser(BaseModel):
@@ -73,6 +84,7 @@ class Secretary(BaseModel):
 class Child(BaseModel):
     child_id: int
     parent_id: int
+    branch_group_id: Optional[int]
     first_name: str
     date_of_birth: date
     id_number: Optional[str] = None
@@ -122,7 +134,7 @@ class Attendance(BaseModel):
     activity_id: int
     status: str
     checked_in_at: datetime
-
+    is_present: bool
     class Config:
         orm_mode = True
 

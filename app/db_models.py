@@ -40,7 +40,8 @@ class LoginUser(Base):
     password_hash = Column(String(255), nullable=False)
     role_id = Column(Integer, ForeignKey("roles.role_id", ondelete="RESTRICT"), nullable=False)
     created_at = Column(DateTime, default=func.now())
-
+    phone = Column(String(50), nullable=False, unique=True)
+    chat_id=Column(String(50),nullable=True)
     role = relationship("Role", back_populates="login_users")
     notifications_received = relationship(
         "Notification",
@@ -56,6 +57,15 @@ class LoginUser(Base):
         back_populates="sender",
         cascade="all, delete-orphan"
     )
+class ActivityAttendance(Base):
+    __tablename__ = "activity_attendance"
+    activity_id = Column(Integer, ForeignKey("activities.activity_id", ondelete="CASCADE"), nullable=False, primary_key=True)
+    child_id = Column(Integer, ForeignKey("children.child_id", ondelete="CASCADE"), nullable=False, primary_key=True)
+    _table_args_ = (
+        CheckConstraint("status IN ('present', 'absent', 'late')", name="valid_status"),
+    )
+    child = relationship("Child", back_populates="activity_attendance")  # הקשר עם השם החדש
+    activity = relationship("Activity", back_populates="attendance_records")
 
 
 # Parent Model
@@ -103,6 +113,7 @@ class Child(Base):
 
     child_id = Column(Integer,unique=True,  primary_key=True)
     parent_id = Column(Integer, ForeignKey('parents.parent_id'), nullable=True)
+    branch_group_id = Column(Integer, ForeignKey('branch_groups.group_id'))
     first_name = Column(String(100), nullable=True)
     last_name = Column(String(100))
     nickname = Column(String(100))
@@ -127,7 +138,8 @@ class Child(Base):
     branch_manager_id = Column(Integer, ForeignKey('branch_managers.branch_manager_id'))
     image=Column(LargeBinary)
         # Relationships
-    attendance_records = relationship("Attendance", back_populates="child")
+    meeting_attendance = relationship("Attendance", back_populates="child")
+    activity_attendance = relationship("ActivityAttendance", back_populates="child")
     branch_manager = relationship('BranchManager', back_populates='children')
     branch = relationship('Branch', back_populates='children')
     class_ = relationship('Class', back_populates='children')
@@ -149,7 +161,7 @@ class Activity(Base):
     points_awarded = Column(Integer, default=0)
 
     branch = relationship("Branch", back_populates="activities")
-    attendance_records = relationship("Attendance", back_populates="activity")
+    attendance_records = relationship("ActivityAttendance", back_populates="activity")
 
 
 # Attendance Model
@@ -158,16 +170,12 @@ class Attendance(Base):
 
     attendance_id = Column(Integer, primary_key=True)
     child_id = Column(Integer, ForeignKey("children.child_id", ondelete="CASCADE"), nullable=False)
-    activity_id = Column(Integer, ForeignKey("activities.activity_id", ondelete="CASCADE"), nullable=False)
-    status = Column(String(20), nullable=False)
+    is_present=Column(Boolean)
+    meeting_id = Column(Integer, ForeignKey("meetings.meeting_id", ondelete="CASCADE"), nullable=False)    
+    branch_id= Column(Integer, nullable=False)
     checked_in_at = Column(DateTime, default=func.now())
-
-    __table_args__ = (
-        CheckConstraint("status IN ('present', 'absent', 'late')", name="valid_status"),
-    )
-
-    child = relationship("Child", back_populates="attendance_records")
-    activity = relationship("Activity", back_populates="attendance_records")
+    child = relationship("Child", back_populates="meeting_attendance") 
+    meeting = relationship("Meeting", back_populates="attendance_records")
 
 # Branch Model
 class Branch(Base):
@@ -179,6 +187,8 @@ class Branch(Base):
     created_at = Column(DateTime, default=func.now())
     activities = relationship("Activity", back_populates="branch")
     children = relationship('Child', back_populates='branch')
+    branch_groups = relationship('BranchGroup', back_populates='branch')
+
 class Class(Base):
     __tablename__ = 'classes'
 
@@ -188,6 +198,51 @@ class Class(Base):
     # Relationships
     children = relationship('Child', back_populates='class_')
 
+
+
+# טבלת הקשרים בין Meetings ו-BranchGroups
+class MeetingBranchGroup(Base):
+    __tablename__ = 'meeting_branch_groups'
+
+    meeting_id = Column(Integer, ForeignKey('meetings.meeting_id', ondelete='CASCADE'), primary_key=True)
+    group_id = Column(Integer, ForeignKey('branch_groups.group_id', ondelete='CASCADE'), primary_key=True)
+
+class BranchGroup(Base):
+    __tablename__ = 'branch_groups'
+
+    group_id = Column(Integer, primary_key=True)
+    group_name = Column(String(100), nullable=True)
+    branch_id = Column(Integer, ForeignKey('branches.branch_id'))  # ForeignKey מקשר לטבלה branches
+
+    # Relationships
+    meetings = relationship(
+        'Meeting',
+        secondary='meeting_branch_groups',
+        back_populates='branch_groups'
+    )
+    
+    branch = relationship("Branch", back_populates="branch_groups")  # קשר חדש
+    children = relationship('Child', backref='group_of_children')
+
+
+
+class Meeting(Base):
+    __tablename__ = 'meetings'
+
+    meeting_id = Column(Integer, primary_key=True)
+    meeting_name = Column(String(100), nullable=True)
+    meeting_date = Column(DateTime, default=func.now())
+
+
+    # Relationships
+    branch_groups = relationship(
+        'BranchGroup', 
+        secondary='meeting_branch_groups',  # כאן אנו מציינים את שם טבלת הקשרים
+        back_populates='meetings'
+    )
+    attendance_records = relationship("Attendance", back_populates="meeting")
+
+ 
 
 class ShirtSize(Base):
     __tablename__ = 'shirt_sizes'

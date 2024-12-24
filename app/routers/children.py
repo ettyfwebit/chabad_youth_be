@@ -15,8 +15,11 @@ def get_db():
 
 @router.get("/", response_model=list[response_models.Child])
 def get_children(db: Session = Depends(get_db)):
-    return db.query(db_models.Child).all()
-
+  children=db.query(db_models.Child).all()
+  for child in children:
+        if child.image:
+         child.image = base64.b64encode(child.image).decode('utf-8')  # Convert
+  return children
 @router.get("/getChildrenByBranch", response_model=list[response_models.Child])
 def get_children(user_id: int,db: Session = Depends(get_db)):
     branch_manager=db.query(db_models.BranchManager).filter(db_models.BranchManager.login_user_id==user_id).first()
@@ -24,6 +27,7 @@ def get_children(user_id: int,db: Session = Depends(get_db)):
 
 @router.get("/getChildrenByParent", response_model=list[response_models.Child])
 def get_children(user_id: int,db: Session = Depends(get_db)):
+    
     parent=db.query(db_models.Parent).filter(db_models.Parent.login_user_id==user_id).first()
     children= db.query(db_models.Child).filter(db_models.Child.parent_id == parent.parent_id).all()
     for child in children:
@@ -69,9 +73,16 @@ def create_child(child_data: dict, db: Session = Depends(get_db)):
             .filter(db_models.Parent.login_user_id==child_data.get("parent_id"))
             .scalar()
         )
+        group_id=(
+            db.query(db_models.BranchGroup.group_id)
+            .filter(db_models.BranchGroup.group_name==child_data.get("group_name"))
+            .scalar()
+        )
+        print("group id",group_id)
 
         # יצירת אובייקט חדש של ילד
         new_child = db_models.Child(
+
             parent_id=parent_id,
             first_name=child_data.get("first_name"),
             last_name=child_data.get("last_name"),
@@ -94,6 +105,7 @@ def create_child(child_data: dict, db: Session = Depends(get_db)):
             phone=child_data.get("phone"),
             health_issue=health_issue,
             approval_received=parental_approval,
+            branch_group_id=group_id,
             image=base64.b64decode(child_data.get("image").split(",")[1]) if child_data.get("image") else None,
         )
 
@@ -138,3 +150,12 @@ def update_child(child_data: dict, db: Session = Depends(get_db)):
     # except Exception as e:
     #     db.rollback()
     #     raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
+
+@router.get("/getChildrenByGroups", response_model=list[response_models.Child])
+def get_children_by_groups(group_ids: str, db: Session = Depends(get_db)):
+    group_ids_list = list(map(int, group_ids.split(',')))
+    children = db.query(db_models.Child).filter(db_models.Child.branch_group_id.in_(group_ids_list)).all()
+    for child in children:
+        if child.image:
+         child.image = base64.b64encode(child.image).decode('utf-8')  # Convert
+    return children

@@ -87,6 +87,7 @@ def register_user(
     # Create a new user object
     new_user = db_models.LoginUser(
         user_name=user_name,
+        chat_id="",
         email=email,
         password_hash=hashed_password,
         role_id=role_id,
@@ -101,5 +102,4 @@ def register_user(
     return new_user
  
 
-from sqlalchemy.exc import SQLAlchemyError
 
