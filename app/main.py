@@ -1,7 +1,7 @@
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import attendance, branches, children, activities, classgrades, groups, login_users, meetings, notifications, shirts
+from app.routers import attendance, branch_managers, branches, children, activities, classgrades, groups, login_users, meetings, notifications, shirts
 from app.database import Base, engine
 
 # Create tables
@@ -27,3 +27,4 @@ app.include_router(shirts.router)
 app.include_router(groups.router)
 app.include_router(meetings.router)
 app.include_router(attendance.router)
+app.include_router(branch_managers.router)

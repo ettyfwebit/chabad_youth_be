@@ -106,13 +106,11 @@ def create_activity(activity: request_models.ActivityCreate, db: Session = Depen
     Create a new activity.
     """
     new_activity = db_models.Activity(
-        branch_id=activity.branch_id,
         name=activity.name,
         description=activity.description,
         location=activity.location,
         start_time=activity.start_time,
         end_time=activity.end_time,
-        points_awarded=activity.points_awarded,
     )
     db.add(new_activity)
     db.commit()
@@ -149,3 +147,28 @@ def edit_activity(
     db.commit()
     db.refresh(existing_activity)
     return existing_activity
+@router.post("/{activity_id}/groups", response_model=List[response_models.ActivityGroups])
+def save_activity_groups(activity_id: int, group_ids: List[int], db: Session = Depends(get_db)):
+    print(f"Received activity_id: {activity_id}, group_ids: {group_ids}")  # הדפס את הנתונים שהתקבלו
+
+    """
+    Save the selected groups for a given activity.
+    """
+    # בדיקת קיום הפעילות
+    existing_activity = db.query(db_models.Activity).filter(db_models.Activity.activity_id == activity_id).first()
+    if not existing_activity:
+        raise HTTPException(status_code=404, detail="Activity not found")
+
+    # שמירת קבוצות חדשות
+    activity_groups = []
+    for group_id in group_ids:
+        existing_group = db.query(db_models.BranchGroup).filter(db_models.BranchGroup.group_id == group_id).first()
+        if not existing_group:
+            raise HTTPException(status_code=404, detail=f"Group {group_id} not found")
+
+        activity_group = db_models.ActivityGroup(activity_id=activity_id, group_id=group_id)
+        db.add(activity_group)
+        activity_groups.append(activity_group)
+
+    db.commit()
+    return activity_groups

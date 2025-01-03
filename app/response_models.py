@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, root_validator
 from datetime import date, datetime
 from typing import Optional, List
 
@@ -32,7 +32,7 @@ class BranchGroup(BaseModel):
     class Config:
         orm_mode = True
 
-  
+
 
 
 
@@ -42,11 +42,13 @@ class LoginUser(BaseModel):
     user_name: str
     email: EmailStr
     role_id: int
-    chat_id: str
+    chat_id: Optional[str] = None  # מאפשר ערך None
     created_at: datetime
-
+    phone: Optional[str] = None
     class Config:
         orm_mode = True
+        from_attributes = True  # נדרש כדי להשתמש ב-from_orm
+
 
 
 # Parent Model
@@ -68,6 +70,7 @@ class BranchManager(BaseModel):
 
     class Config:
         orm_mode = True
+        from_attributes = True  # נדרש כדי להשתמש ב-from_orm
 
 
 # Secretary Model
@@ -106,7 +109,7 @@ class Child(BaseModel):
     nickname: Optional[str] = None
     phone: Optional[str] = None
     image: Optional[bytes]=None
-
+   
     class Config:
         orm_mode = True
 
@@ -115,18 +118,22 @@ class Child(BaseModel):
 # Activity Model
 class Activity(BaseModel):
     activity_id: int
-    branch_id: int
     name: str
     description: Optional[str]
     location: Optional[str]
     start_time: datetime
     end_time: datetime
-    points_awarded: int
+    points_limit: int
 
     class Config:
         orm_mode = True
+class ActivityAttendance(BaseModel):
 
-
+  child_id: int
+  activity_id :int
+  is_present:bool
+  class Config:
+        orm_mode = True
 # Attendance Model
 class Attendance(BaseModel):
     attendance_id: int
@@ -144,33 +151,18 @@ class Notification(BaseModel):
     notification_id: int
     user_id: int
     sent_by: Optional[int]
-    sent_by_name: str
     message: str
     is_resolved: bool
     created_at: datetime
-
+    reply_to: Optional[int]
+    sent_by_name: Optional[str] = None  # Allow None if the name is not always present
+    reply_to_message: Optional[str]  # הוספת שדה נוסף שישמור את ההודעה שאליה התגובה
+    forward_reason:Optional[str]=None
     class Config:
         orm_mode = True
+   
 
 
-class ActivityCreate(BaseModel):
-    branch_id: int
-    name: str
-    description: Optional[str]
-    location: Optional[str]
-    start_time: datetime
-    end_time: datetime
-    points_awarded: int
-
-
-class ActivityEdit(BaseModel):
-    branch_id: Optional[int]
-    name: Optional[str]
-    description: Optional[str]
-    location: Optional[str]
-    start_time: Optional[datetime]
-    end_time: Optional[datetime]
-    points_awarded: Optional[int]
 
 class Class(BaseModel):
 
@@ -184,5 +176,17 @@ class ShirtSize(BaseModel):
 
     shirt_size_id:int
     shirt_size :str
+    class Config:
+        orm_mode = True
+class BranchManagerWithLoginUser(BaseModel):
+    branch_manager: BranchManager
+    login_user: LoginUser
+
+    class Config:
+        orm_mode = True  
+class ActivityGroups(BaseModel):
+    activity_id: int
+    group_id: int
+
     class Config:
         orm_mode = True

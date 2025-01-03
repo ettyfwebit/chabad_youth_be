@@ -2,8 +2,14 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app import db_models, request_models, response_models, database
-from app.db_models import Notification
+from app.db_models import Notification, Parent
 from app.messages import green_api
+from sqlalchemy import outerjoin
+from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import aliased
+from sqlalchemy import create_engine
+
+
 
 router = APIRouter(prefix="/notifications", tags=["notifications"])
 
@@ -15,24 +21,30 @@ def get_db():
         db.close()
 
 
-@router.get("/{user_id}", response_model=List[response_models.Notification])
-def get_notifications(user_id: int, db: Session = Depends(get_db)):
+from sqlalchemy.orm import joinedload
+
+@router.get("/{user_id}", response_model=list[response_models.Notification])
+def get_notifications(user_id: int, db: Session = Depends(get_db)):  
+    # שליפת כל ההודעות עבור משתמש מסויים עם הצטרפות לטבלת Login_users
     notifications = (
-        db.query(Notification, 
-                 db_models.LoginUser.user_name.label('sent_by_name'),
-                 Notification.notification_id,
-                 Notification.message,
-                 Notification.is_resolved,
-                 Notification.created_at,
-                 Notification.sent_by,
-                 Notification.user_id)
+        db.query(Notification, db_models.LoginUser.user_name.label("sent_by_name"))
         .join(db_models.LoginUser, Notification.sent_by == db_models.LoginUser.login_user_id)
+        .options(joinedload(Notification.reply_to_notification))  # טוען את ההודעה שאליה התגובה מתייחסת
         .filter(Notification.user_id == user_id)
-        .order_by(Notification.is_resolved)
         .all()
     )
 
-    return notifications
+    # עיבוד התוצאה כדי למלא את השדה reply_to_message
+    results = []
+    for notification, sent_by_name in notifications:
+        notification_data = notification.__dict__.copy()
+        notification_data['reply_to_message'] = (
+            notification.reply_to_notification.message if notification.reply_to_notification else None
+        )
+        notification_data['sent_by_name'] = sent_by_name  # הוספת השם של השולח
+        results.append(notification_data)
+    return results
+
 
 
 @router.post("/", response_model=list[response_models.Notification])
@@ -40,11 +52,15 @@ def send_notifications(request: request_models.messageRequest, db: Session = Dep
     notifications = []
     for user_id in request.user_ids:
         user = db.query(db_models.LoginUser).filter(db_models.LoginUser.login_user_id == user_id).first()
-        green_api.send_message(request.message, user.chat_id)
+        # אם מדובר בהודעה שהיא תגובה להודעה קודמת
+        reply_to = request.reply_to_notification_id if hasattr(request, 'reply_to_notification_id') else None
+        green_api.send_message(request.message, user.chat_id, reply_to_message_id=reply_to)
         new_notification = Notification(
             user_id=user_id,
             sent_by=request.sent_by,
-            message=request.message
+            message=request.message,
+            reply_to=reply_to,
+            forward_reason=request.forward_reason
         )
         db.add(new_notification)
         notifications.append(new_notification)
@@ -60,3 +76,19 @@ def mark_as_resolved(notification_id: int, db: Session = Depends(get_db)):
     # Toggle the resolved state
     notification.is_resolved = not notification.is_resolved
     db.commit()
+
+
+@router.post("/login_ids", response_model=dict[int, int])
+def get_login_user_ids(parent_ids: List[int], db: Session = Depends(get_db)):
+    """
+    מקבל רשימה של parent_id ומחזיר מיפוי של כל parent_id ל-login_user_id
+    """
+    if not parent_ids:
+        raise HTTPException(status_code=400, detail="No parent_ids provided")
+
+    # שליפת הורים ותעודות המשתמש שלהם
+    parents = db.query(db_models.Parent.parent_id, db_models.Parent.login_user_id).filter(Parent.parent_id.in_(parent_ids)).all()
+
+    # מיפוי לתוצאה בפורמט {parent_id: login_user_id}
+    return {parent_id: login_user_id for parent_id, login_user_id in parents}
+

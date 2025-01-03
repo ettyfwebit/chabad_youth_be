@@ -1,6 +1,7 @@
 import base64
 from fastapi import APIRouter, Depends, HTTPException
 from psycopg2 import IntegrityError
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from app import db_models, response_models, database
 
@@ -15,6 +16,7 @@ def get_db():
 
 @router.get("/", response_model=list[response_models.Child])
 def get_children(db: Session = Depends(get_db)):
+    
   children=db.query(db_models.Child).all()
   for child in children:
         if child.image:
@@ -158,4 +160,57 @@ def get_children_by_groups(group_ids: str, db: Session = Depends(get_db)):
     for child in children:
         if child.image:
          child.image = base64.b64encode(child.image).decode('utf-8')  # Convert
+        total_sessions = db.query(func.count(db_models.Attendance.attendance_id)) \
+            .filter(db_models.Attendance.child_id == child.child_id).scalar()
+        print ("total_Session:" ,total_sessions)
+        # שליפת המפגשים שבהם הילד היה נוכח
+        present_sessions = db.query(func.count(db_models.Attendance.attendance_id)) \
+            .filter(db_models.Attendance.child_id == child.child_id, db_models.Attendance.is_present == True).scalar()
+        print("present_Session:" ,present_sessions)
+        # חישוב אחוזי הנוכחות
+        attendance_percentage = (present_sessions / total_sessions) * 100 if total_sessions > 0 else 0
+        print("Attendance_percentage:" ,attendance_percentage)
+        child.total_points=round(attendance_percentage)
     return children
+from fastapi import HTTPException
+
+@router.delete("/deleteChild/{child_id}")
+def delete_child(child_id: int, db: Session = Depends(get_db)):
+    # חיפוש הילד לפי ID
+    child = db.query(db_models.Child).filter(db_models.Child.child_id == child_id).first()
+    
+    if not child:
+        # אם הילד לא נמצא, מחזירים שגיאה
+        raise HTTPException(status_code=404, detail="Child not found")
+    
+    # מחיקת הילד מהטבלה
+    db.delete(child)
+    db.commit()
+    return {"status": "success"}
+@router.get("/{login_user_id}/first", response_model=response_models.Child)
+def get_first_child_by_login_user_id(login_user_id: int, db: Session = Depends(get_db)):
+    # בדיקה אם המשתמש הוא הורה
+    login_user = db.query(db_models.LoginUser).filter(db_models.LoginUser.login_user_id == login_user_id).first()
+    if not login_user:
+        raise HTTPException(status_code=404, detail="Login user not found")
+
+    if login_user.role_id != 1:  # רק אם המשתמש הוא הורה
+        raise HTTPException(status_code=400, detail="User is not a parent")
+
+    # שליפת ה-parent_id מהטבלה parents
+    parent = db.query(db_models.Parent).filter(db_models.Parent.login_user_id == login_user_id).first()
+    if not parent:
+        raise HTTPException(status_code=404, detail="Parent not found")
+
+    # שליפת הילד הראשון מהטבלה children
+    child = db.query(db_models.Child).filter(db_models.Child.parent_id == parent.parent_id).order_by(db_models.Child.child_id.asc()).first()
+    if not child:
+        raise HTTPException(status_code=404, detail="No child found for the given parent")
+
+    # קידוד התמונה (אם קיימת)
+    if child.image:
+        child.image = base64.b64encode(child.image).decode('utf-8')
+
+    return child
+
+
