@@ -56,3 +56,61 @@ def delete_branch(branch_id: int, db: Session = Depends(get_db)):
     db.delete(branch)
     db.commit()
     return branch
+
+@router.get("/{branch_id}/groups", response_model=list[response_models.BranchGroup])
+def get_branch_groups(branch_id: int, db: Session = Depends(get_db)):
+    group_list=db.query(db_models.BranchGroup).filter(db_models.BranchGroup.branch_id==branch_id)
+   
+    # החזרת קבוצות הסניף
+    return group_list
+
+@router.post("/{branch_id}/groups", response_model=response_models.BranchGroup)
+def add_group_to_branch(branch_id: int, new_group: request_models.BranchGroupCreate, db: Session = Depends(get_db)):
+    # חיפוש הסניף
+    branch = db.query(db_models.Branch).filter(db_models.Branch.branch_id == branch_id).first()
+    
+    if not branch:
+        raise HTTPException(status_code=404, detail="Branch not found")
+
+    # יצירת קבוצה חדשה
+    new_group_db = db_models.BranchGroup(
+        group_name=new_group.group_name,
+        branch_id=branch_id
+    )
+    db.add(new_group_db)
+    db.commit()
+    db.refresh(new_group_db)
+    
+    return new_group_db
+@router.put("/groups", response_model=list[response_models.BranchGroup])
+def update_group(updated_groups: list[response_models.BranchGroup], db: Session = Depends(get_db)):
+    updated_result = []
+    
+    for group in updated_groups:
+        # חפש את הקבוצה לפי ה-group_id
+        match_group = db.query(db_models.BranchGroup).filter(db_models.BranchGroup.group_id == group.group_id).first()
+
+        if not match_group:
+            raise HTTPException(status_code=404, detail="Group not found")
+        
+        # עדכון שם הקבוצה
+        match_group.group_name = group.group_name if group.group_name else match_group.group_name
+
+        db.commit()
+        db.refresh(match_group)
+        
+        updated_result.append(match_group)
+    
+    return updated_result
+
+@router.delete("/groups/{group_id}", response_model=response_models.BranchGroup)
+def delete_group(group_id: int, db: Session = Depends(get_db)):
+    group = db.query(db_models.BranchGroup).filter(db_models.BranchGroup.group_id == group_id).first()
+
+    if not group:
+        raise HTTPException(status_code=404, detail="Group not found")
+
+    db.delete(group)
+    db.commit()
+
+    return group

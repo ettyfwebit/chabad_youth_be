@@ -211,7 +211,7 @@ class MeetingBranchGroup(Base):
 class BranchGroup(Base):
     __tablename__ = 'branch_groups'
 
-    group_id = Column(Integer, primary_key=True)
+    group_id = Column(Integer, primary_key=True,autoincrement=True)
     group_name = Column(String(100), nullable=True)
     branch_id = Column(Integer, ForeignKey('branches.branch_id'))  # ForeignKey מקשר לטבלה branches
 
@@ -224,7 +224,10 @@ class BranchGroup(Base):
     
     branch = relationship("Branch", back_populates="branch_groups")  # קשר חדש
     children = relationship('Child', backref='group_of_children')
-    activity_groups = relationship("ActivityGroup", back_populates="group")
+    activity_groups = relationship("ActivityGroup", back_populates="group",       
+     cascade="all, delete-orphan"  # הוספת האפשרות למחוק אוטומטית שורות מקושרות
+
+)
 
 
 
@@ -259,7 +262,7 @@ class ActivityGroup(Base):
     __tablename__ = 'activity_groups'
 
     activity_id = Column(Integer, ForeignKey('activities.activity_id'), primary_key=True)
-    group_id = Column(Integer, ForeignKey('branch_groups.group_id'), primary_key=True)
+    group_id = Column(Integer, ForeignKey('branch_groups.group_id',ondelete='CASCADE'), primary_key=True)
 
     # קשרים בין הטבלאות (אם יש קשרים נוספים)
     activity = relationship("Activity", back_populates="activity_groups")

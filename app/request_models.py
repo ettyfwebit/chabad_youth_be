@@ -4,6 +4,8 @@ from typing import List, Optional
 from pydantic import BaseModel, EmailStr
 from sqlalchemy import DateTime, Integer, String, Text
 
+from app import db_models, response_models
+
 
 class ActivityCreate (BaseModel):
     branch_id :Integer
@@ -38,6 +40,15 @@ class LoginRequest(BaseModel):
 
 class messageRequest(BaseModel):
     message: str
+    user_ids: int  # List of user IDs to send the message to
+    sent_by: int  # ID of the user sending the message
+    reply_to_notification_id: Optional[int] = None  # שדה אופציונלי להודעה קודמת
+    forward_reason:Optional[str]=None
+    class Config:
+        orm_mode = True    
+        arbitrary_types_allowed = True
+class messagesRequest(BaseModel):
+    message: str
     user_ids: List[int]  # List of user IDs to send the message to
     sent_by: int  # ID of the user sending the message
     reply_to_notification_id: Optional[int] = None  # שדה אופציונלי להודעה קודמת
@@ -45,7 +56,6 @@ class messageRequest(BaseModel):
     class Config:
         orm_mode = True    
         arbitrary_types_allowed = True
-
 class RegisterRequest(BaseModel):
     user_name: str
     email: EmailStr
@@ -75,3 +85,24 @@ class ActivityEdit(BaseModel):
     start_time: Optional[datetime]
     end_time: Optional[datetime]
     points_awarded: Optional[int]
+class LoginUserCreate(BaseModel):
+    user_name: str
+    email: EmailStr
+    phone: str
+    password: str
+class BranchManagerCreate(BaseModel):
+    branch_id: int
+
+class BranchManagerCreate(BaseModel):
+    login_user: LoginUserCreate
+    branch_manager:BranchManagerCreate
+    class Config:
+        arbitrary_types_allowed = True
+
+class BranchManagerUpdate(BaseModel):
+    login_user: response_models.LoginUser
+    branch_manager: response_models.BranchManager
+class BranchGroupCreate(BaseModel):
+    group_name: str 
+class ParentIdRequest(BaseModel):
+    parent_id: int

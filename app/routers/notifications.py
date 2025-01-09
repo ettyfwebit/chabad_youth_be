@@ -47,16 +47,17 @@ def get_notifications(user_id: int, db: Session = Depends(get_db)):
 
 
 
-@router.post("/", response_model=list[response_models.Notification])
+@router.post("/sendNlotifications", response_model=list[response_models.Notification])
 def send_notifications(request: request_models.messageRequest, db: Session = Depends(get_db)):
-    notifications = []
-    for user_id in request.user_ids:
-        user = db.query(db_models.LoginUser).filter(db_models.LoginUser.login_user_id == user_id).first()
+        print (request)
+        notifications = []
+
+        user = db.query(db_models.LoginUser).filter(db_models.LoginUser.login_user_id == request.user_ids).first()
         # אם מדובר בהודעה שהיא תגובה להודעה קודמת
         reply_to = request.reply_to_notification_id if hasattr(request, 'reply_to_notification_id') else None
-        green_api.send_message(request.message, user.chat_id, reply_to_message_id=reply_to)
+        green_api.send_message(request.message, user.chat_id,request.forward_reason, reply_to_message_id=reply_to )
         new_notification = Notification(
-            user_id=user_id,
+            user_id=request.user_ids,
             sent_by=request.sent_by,
             message=request.message,
             reply_to=reply_to,
@@ -64,9 +65,31 @@ def send_notifications(request: request_models.messageRequest, db: Session = Dep
         )
         db.add(new_notification)
         notifications.append(new_notification)
-    db.commit()
-    return notifications
+        db.commit()
+        return notifications
 
+@router.post("/", response_model=list[response_models.Notification])
+def send_notifications(request: request_models.messagesRequest, db: Session = Depends(get_db)):
+        print (request)
+        notifications = []
+        for user_id in request.user_ids:
+         user = db.query(db_models.LoginUser).filter(db_models.LoginUser.login_user_id == user_id).first()
+        # אם מדובר בהודעה שהיא תגובה להודעה קודמת
+         reply_to = request.reply_to_notification_id if hasattr(request, 'reply_to_notification_id') else None
+         green_api.send_message(request.message, user.chat_id, reply_to_message_id=reply_to)
+         new_notification = Notification(
+            user_id=user_id,
+            sent_by=request.sent_by,
+            message=request.message,
+            reply_to=reply_to,
+            forward_reason=request.forward_reason
+        )
+         db.add(new_notification)
+         notifications.append(new_notification)
+        db.commit()
+        return notifications
+
+        
 
 @router.patch("/{notification_id}/mark_resolved")
 def mark_as_resolved(notification_id: int, db: Session = Depends(get_db)):
@@ -79,16 +102,20 @@ def mark_as_resolved(notification_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/login_ids", response_model=dict[int, int])
-def get_login_user_ids(parent_ids: List[int], db: Session = Depends(get_db)):
-    """
-    מקבל רשימה של parent_id ומחזיר מיפוי של כל parent_id ל-login_user_id
-    """
-    if not parent_ids:
-        raise HTTPException(status_code=400, detail="No parent_ids provided")
+def get_login_user_ids(request: request_models.ParentIdRequest, db: Session = Depends(get_db)):
+ 
+    print("parentId", request.parent_id)
+    if not request.parent_id:
+        raise HTTPException(status_code=400, detail="No parent_id provided")
 
-    # שליפת הורים ותעודות המשתמש שלהם
-    parents = db.query(db_models.Parent.parent_id, db_models.Parent.login_user_id).filter(Parent.parent_id.in_(parent_ids)).all()
+    # שליפת הורה ותעודת המשתמש שלו
+    parent = db.query(db_models.Parent.parent_id, db_models.Parent.login_user_id).filter(Parent.parent_id == request.parent_id).first()
+    print("parent", parent)
+    
+    if parent:
+        # מיפוי לתוצאה {parent_id: login_user_id}
+        return {parent.parent_id: parent.login_user_id}
+    else:
+        raise HTTPException(status_code=404, detail="Parent not found")
 
-    # מיפוי לתוצאה בפורמט {parent_id: login_user_id}
-    return {parent_id: login_user_id for parent_id, login_user_id in parents}
 

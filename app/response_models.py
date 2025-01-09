@@ -59,6 +59,7 @@ class Parent(BaseModel):
 
     class Config:
         orm_mode = True
+        from_attributes = True  # נדרש כדי להשתמש ב-from_orm
 
 
 # Branch Manager Model
@@ -181,7 +182,11 @@ class ShirtSize(BaseModel):
 class BranchManagerWithLoginUser(BaseModel):
     branch_manager: BranchManager
     login_user: LoginUser
-
+    class Config:
+        orm_mode = True  
+class ParentsWithLoginUser(BaseModel):
+    parent: Parent
+    login_user: LoginUser
     class Config:
         orm_mode = True  
 class ActivityGroups(BaseModel):
