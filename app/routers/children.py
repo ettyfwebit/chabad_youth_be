@@ -55,11 +55,14 @@ def create_child(child_data: dict, db: Session = Depends(get_db)):
             .filter(db_models.Branch.branch_name == child_data.get("branch_name"))
             .scalar()
         )
-        branch_manager_id = (
-          db.query(db_models.BranchManager.branch_manager_id)  # שמים כאן את הטבלה המתאימה
-         .filter(db_models.BranchManager.branch_id == branch_id)
-         .scalar()  # מקבלים את ה-branch_manager_id
-)
+        branch_manager = (
+        db.query(db_models.BranchManager.branch_manager_id)
+        .filter(db_models.BranchManager.branch_id == branch_id)
+        .order_by(db_models.BranchManager.branch_manager_id)  # למיין לפי ID או קריטריון אחר
+        .first()  # מחזיר את השורה הראשונה בלבד
+        )
+        branch_manager_id = branch_manager[0] if branch_manager else None
+
         class_id = (
             db.query(db_models.Class.class_id)
             .filter(db_models.Class.class_name == child_data.get("class"))
