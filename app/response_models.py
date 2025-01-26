@@ -122,10 +122,9 @@ class Activity(BaseModel):
     name: str
     description: Optional[str]
     location: Optional[str]
-    start_time: datetime
-    end_time: datetime
+    start_time: date
+    end_time: date
     points_limit: int
-
     class Config:
         orm_mode = True
 class ActivityAttendance(BaseModel):
@@ -195,3 +194,25 @@ class ActivityGroups(BaseModel):
 
     class Config:
         orm_mode = True
+class BranchWithGroups(BaseModel):
+    branch_name: str
+    branch_id: int
+    groups: List[BranchGroup]
+
+    class Config:
+        orm_mode = True
+
+class ActivityWithBranches(BaseModel):
+    activity_id: int
+    name: str
+    description: Optional[str]
+    location: Optional[str]
+    start_time: datetime
+    end_time: datetime
+    branches: List[BranchWithGroups]
+
+    class Config:
+        orm_mode = True
+
+
+        

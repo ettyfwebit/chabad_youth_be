@@ -158,8 +158,8 @@ class Activity(Base):
     name = Column(String(100), nullable=False)
     description = Column(Text)
     location = Column(String(255))
-    start_time = Column(DateTime, nullable=False)
-    end_time = Column(DateTime, nullable=False)
+    start_time = Column(Date, nullable=False)
+    end_time = Column(Date, nullable=False)
     points_limit = Column(Integer, default=0)
 
     attendance_records = relationship("ActivityAttendance", back_populates="activity")

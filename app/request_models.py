@@ -8,26 +8,22 @@ from app import db_models, response_models
 
 
 class ActivityCreate (BaseModel):
-    branch_id :Integer
     name :String
     description :Text
     location :String
     start_time :DateTime
     end_time :DateTime
-    points_awarded :Integer
 
     class Config:
        orm_mode = True    
        arbitrary_types_allowed = True
 
 class ActivityEdit(BaseModel):
-    branch_id: Optional[int] = None
     name: Optional[str] = None
     description: Optional[str] = None
     location: Optional[str] = None
     start_time: Optional[DateTime] = None
     end_time: Optional[DateTime] = None
-    points_awarded: Optional[int] = None
 
     class Config:
         orm_mode = True    
@@ -78,13 +74,11 @@ class ActivityCreate(BaseModel):
 
 
 class ActivityEdit(BaseModel):
-    branch_id: Optional[int]
     name: Optional[str]
     description: Optional[str]
     location: Optional[str]
     start_time: Optional[datetime]
     end_time: Optional[datetime]
-    points_awarded: Optional[int]
 class LoginUserCreate(BaseModel):
     user_name: str
     email: EmailStr
