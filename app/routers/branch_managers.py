@@ -14,7 +14,6 @@ def get_db():
         db.close()
 
 
-
 @router.get("/", response_model=list[response_models.BranchManagerWithLoginUser])
 def get_all_branch_managers_with_login_users(db: Session = Depends(get_db)):
     result = []

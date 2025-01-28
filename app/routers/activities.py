@@ -5,6 +5,8 @@ from sqlalchemy import and_, or_
 from datetime import datetime
 from typing import Optional, List
 from app import db_models, response_models, database
+from app.routers.Token import role_required
+from app.routers.Token import verify_token
 
 router = APIRouter(prefix="/activities", tags=["activities"])
 
@@ -32,10 +34,19 @@ def get_db():
     finally:
         db.close()
 
+@router.get("/checkPermission")
+def checkPermission(db: Session = Depends(get_db),str = Depends(role_required("branch_manager"))):
+    return
+@router.get("/checkParentPermission")
+def checkPermission(db: Session = Depends(get_db),str = Depends(role_required("parent"))):
+    return
 
+@router.get("/checkSecretaryPermission")
+def checkPermission(db: Session = Depends(get_db),str = Depends(role_required("secretary"))):
+    return
 
 @router.post("/", response_model=response_models.Activity)
-def create_activity(activity: request_models.ActivityCreate, db: Session = Depends(get_db)):
+def create_activity(activity: request_models.ActivityCreate, db: Session = Depends(get_db) ,str = Depends(role_required("secretary"))):
     """
     Create a new activity.
     """
@@ -44,6 +55,7 @@ def create_activity(activity: request_models.ActivityCreate, db: Session = Depen
         description=activity.description,
         location=activity.location,
         start_time=activity.start_time,
+
         end_time=activity.end_time,
 
     )
@@ -52,7 +64,7 @@ def create_activity(activity: request_models.ActivityCreate, db: Session = Depen
     db.refresh(new_activity)
     return new_activity
 @router.put("/updateActivity", response_model=response_models.Activity)
-def update_activity(activity_data: response_models.Activity, db: Session = Depends(get_db)):
+def update_activity(activity_data: response_models.ActivityWithBranches, db: Session = Depends(get_db), str = Depends(role_required("secretary"))):
         print (activity_data)
         # חיפוש הילד במאגר
         activity = db.query(db_models.Activity).filter(db_models.Activity.activity_id == activity_data.activity_id).first()
@@ -71,9 +83,9 @@ def update_activity(activity_data: response_models.Activity, db: Session = Depen
         db.refresh(activity)
         return activity
 
-@router.put("/{activity_id}", response_model=response_models.Activity)
+@router.put("/{activity_id}", response_model=response_models.Activity )
 def edit_activity(
-    activity_id: int, activity: request_models.ActivityEdit, db: Session = Depends(get_db)
+    activity_id: int, activity: request_models.ActivityEdit, db: Session = Depends(get_db) ,str = Depends(verify_token)
 ):
     """
     Edit an existing activity.
@@ -99,7 +111,8 @@ def edit_activity(
     db.refresh(existing_activity)
     return existing_activity
 @router.post("/{activity_id}/groups", response_model=List[response_models.ActivityGroups])
-def update_activity_groups(activity_id: int, group_ids: List[int], db: Session = Depends(get_db)):
+def update_activity_groups(activity_id: int, group_ids: List[int], db: Session = Depends(get_db) ,role: str = Depends(role_required("secretary"))
+):
     print(f"Received activity_id: {activity_id}, group_ids: {group_ids}")  # הדפס את הנתונים שהתקבלו
 
     # בדיקת קיום הפעילות
@@ -137,7 +150,7 @@ def update_activity_groups(activity_id: int, group_ids: List[int], db: Session =
 
 
 @router.get("/", response_model=List[response_models.ActivityWithBranches])
-def get_activities(db: Session = Depends(get_db)):
+def get_activities(db: Session = Depends(get_db),str = Depends(role_required("secretary"))):
     query = (
         db.query(
             db_models.Activity,
@@ -188,7 +201,7 @@ def get_activities(db: Session = Depends(get_db)):
 
 
 @router.delete("/deleteActivity/{activity_id}")
-def delete_child(activity_id: int, db: Session = Depends(get_db)):
+def delete_child(activity_id: int, db: Session = Depends(get_db),str = Depends(verify_token)):
     # חיפוש הילד לפי ID
     activity = db.query(db_models.Activity).filter(db_models.Activity.activity_id == activity_id).first()
     
